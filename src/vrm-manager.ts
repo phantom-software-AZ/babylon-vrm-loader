@@ -44,7 +44,7 @@ export class VRMManager {
     private transformNodeCache: TransformNodeCache = {};
     private meshCache: MeshCache = {};
     private _humanoidBone: HumanoidBone;
-    private _rootMesh: Mesh;
+    private _rootMesh!: Mesh;
 
     /**
      * Secondary Animation として定義されている VRM Spring Bone のコントローラ

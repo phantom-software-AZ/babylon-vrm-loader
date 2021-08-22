@@ -108,4 +108,6 @@ export class VRM implements IGLTFLoaderExtension {
 }
 
 // ローダーに登録する
-GLTFLoader.RegisterExtension(NAME, (loader) => new VRM(loader));
+export const registerVrmExtension = () => {
+    GLTFLoader.RegisterExtension(NAME, (loader) => new VRM(loader));
+};

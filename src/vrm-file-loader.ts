@@ -17,6 +17,8 @@ export class VRMFileLoader extends GLTFFileLoader {
   }
 }
 
-if (SceneLoader) {
-  SceneLoader.RegisterPlugin(new VRMFileLoader());
-}
+export const registerPlugin = () => {
+    if (SceneLoader) {
+        SceneLoader.RegisterPlugin(new VRMFileLoader());
+    }
+};

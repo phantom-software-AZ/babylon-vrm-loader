@@ -52,4 +52,6 @@ export class VCAST_vci_material_unity implements IGLTFLoaderExtension {
 }
 
 // ローダーに登録する
-GLTFLoader.RegisterExtension(NAME, (loader) => new VCAST_vci_material_unity(loader));
+export const registerVciExtension = () => {
+    GLTFLoader.RegisterExtension(NAME, (loader) => new VCAST_vci_material_unity(loader));
+};

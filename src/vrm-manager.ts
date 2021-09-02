@@ -2,11 +2,14 @@ import { Vector3 } from '@babylonjs/core/Maths/math';
 import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { MorphTarget } from '@babylonjs/core/Morph/morphTarget';
-import { Scene } from '@babylonjs/core/scene';
 import { Nullable } from '@babylonjs/core/types';
-import { SpringBoneController } from './secondary-animation/spring-bone-controller';
+import {SpringBoneController} from './secondary-animation/spring-bone-controller';
 import { HumanoidBone } from './humanoid-bone';
 import { IVRM } from './vrm-interfaces';
+import {
+    Node,
+    Scene
+} from "@babylonjs/core";
 
 interface MorphTargetSetting {
     target: MorphTarget;
@@ -43,6 +46,7 @@ export class VRMManager {
     private transformNodeMap: TransformNodeMap = {};
     private transformNodeCache: TransformNodeCache = {};
     private meshCache: MeshCache = {};
+    private _rootSkeleton: Node;
     private _humanoidBone: HumanoidBone;
     private _rootMesh!: Mesh;
 
@@ -69,6 +73,9 @@ export class VRMManager {
         this.springBoneController = new SpringBoneController(
             this.ext.secondaryAnimation,
             this.findTransformNode.bind(this),
+            {
+                gravityPower: 0.5,
+            }
         );
         this.springBoneController.setup();
 
@@ -76,6 +83,63 @@ export class VRMManager {
         this.constructTransformNodeMap();
 
         this._humanoidBone = new HumanoidBone(this.transformNodeMap);
+
+        this.removeDuplicateSkeletons();
+        this._rootSkeleton = this.getRootSkeletonNode();
+    }
+
+    /**
+     * Remove duplicate skeletons when importing VRM.
+     * Only tested on VRoidStudio output files.
+     * @private
+     */
+    private removeDuplicateSkeletons() {
+        let skeleton = null;
+        for (const nodeIndex of Object.keys(this.meshCache).map(Number)) {
+            const meshes = this.meshCache[nodeIndex];
+            if (meshes.length && meshes[0].skeleton) {
+                if (!skeleton) {
+                    skeleton = meshes[0].skeleton;
+                    if (this._rootMesh) {
+                        const rootBone = skeleton.bones[0];
+                        // Usually it is called "Root", but there are exceptions
+                        if (rootBone.name !== "Root")
+                            console.warn('The first bone has a different name than "Root"');
+                    }
+                } else {
+                    // weak sanity check
+                    if (skeleton.bones.length != meshes[0].skeleton.bones.length)
+                        console.warn("Skeletons have different numbers of bones!");
+
+                    meshes[0].skeleton.dispose();
+                    for (const mesh of meshes) {
+                        mesh.skeleton = skeleton;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Find the root node of skeleton.
+     * @private
+     */
+    private getRootSkeletonNode(): Node {
+        const rootMeshChildren = this._rootMesh.getChildren((node: Node) => {
+            return node.name === "Root" || node.name === "Armature";
+        })
+        if (rootMeshChildren.length > 0)
+            return rootMeshChildren[0];
+        else {
+            // Try to find in scene directly
+            const rootMeshChild = this.scene.getNodeByName("Root")
+                ? this.scene.getNodeByName("Root")
+                : this.scene.getNodeByName("Armature");
+            if (rootMeshChild && !rootMeshChild.parent)
+                return rootMeshChild;
+            else
+                throw Error("Cannot find root skeleton node!");
+        }
     }
 
     /**
@@ -167,16 +231,6 @@ export class VRMManager {
     }
 
     /**
-     * ボーン名からそのボーンに該当する TransformNode を取得する
-     *
-     * @param name HumanBoneName
-     * @deprecated Use humanoidBone getter instead. This method will delete at v2.
-     */
-    public getBone(name: HumanBoneName): Nullable<TransformNode> {
-        return this.transformNodeMap[name] || null;
-    }
-
-    /**
      * Get HumanoidBone Methods
      */
     public get humanoidBone(): HumanoidBone {
@@ -192,6 +246,10 @@ export class VRMManager {
         return this._rootMesh;
     }
 
+    public get rootSkeletonNode(): Node {
+        return this._rootSkeleton;
+    }
+
     /**
      * node 番号から該当する TransformNode を探す
      * 数が多くなるのでキャッシュに参照を持つ構造にする
@@ -200,15 +258,6 @@ export class VRMManager {
      */
     public findTransformNode(nodeIndex: number): Nullable<TransformNode> {
         return this.transformNodeCache[nodeIndex] || null;
-    }
-
-    /**
-     * mesh 番号からメッシュを探す
-     * gltf の mesh 番号は `metadata.gltf.pointers` に記録されている
-     * @deprecated Use findMeshes instead. This method has broken.
-     */
-    public findMesh(meshIndex: number): Nullable<Mesh> {
-        return this.meshCache[meshIndex] && this.meshCache[meshIndex][0] || null;
     }
 
     /**

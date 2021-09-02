@@ -5,7 +5,7 @@ import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight';
 import { PointLight } from '@babylonjs/core/Lights/pointLight';
 import { ShadowGenerator } from '@babylonjs/core/Lights/Shadows/shadowGenerator';
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
-import { Vector3 } from '@babylonjs/core/Maths/math';
+import { Vector3 } from '@babylonjs/core';
 import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { Scene } from '@babylonjs/core/scene';
 import { VRMManager } from '../vrm-manager';

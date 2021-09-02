@@ -11,6 +11,32 @@ import { VRMSpringBone } from './vrm-spring-bone';
 type getBone = (nodeIndex: number) => Nullable<TransformNode>;
 
 /**
+ * Options for creating springs
+ */
+export interface ConstructSpringsOptions {
+    /**
+     * The resilience of the swaying object
+     */
+    stiffness?: number;
+    /**
+     * The strength of gravity
+     */
+    gravityPower?: number;
+    /**
+     * The direction of gravity. Set (0, -1, 0) for simulating the gravity. Set (1, 0, 0) for simulating the wind.
+     */
+    gravityDir?: Vector3;
+     /**
+     * The resistance (deceleration) of automatic animation
+     */
+     dragForce?: number;
+    /**
+     * The radius of the sphere used for the collision detection with colliders
+     */
+    hitRadius?: number;
+}
+
+/**
  * VRM SpringBone Controller
  */
 export class SpringBoneController {
@@ -22,13 +48,15 @@ export class SpringBoneController {
     /**
      * @param ext SecondaryAnimation Object
      * @param getBone
+     * @param options Override for constructSprings
      */
     public constructor(
         public readonly ext: IVRMSecondaryAnimation,
         getBone: getBone,
+        options: ConstructSpringsOptions
     ) {
         const colliderGroups = this.constructColliderGroups(getBone);
-        this.springs = this.constructSprings(getBone, colliderGroups);
+        this.springs = this.constructSprings(getBone, colliderGroups, options);
     }
 
     public dispose() {
@@ -79,7 +107,8 @@ export class SpringBoneController {
         return colliderGroups;
     }
 
-    private constructSprings(getBone: getBone, colliderGroups: ColliderGroup[]) {
+    private constructSprings(getBone: getBone, colliderGroups: ColliderGroup[],
+                             options: ConstructSpringsOptions) {
         if (!this.ext.boneGroups || !this.ext.boneGroups.length) {
             return [];
         }
@@ -91,19 +120,46 @@ export class SpringBoneController {
             const springColliders = (spring.colliderGroups || []).map<ColliderGroup>((g) => {
                 return colliderGroups[g];
             });
+            console.log(options.stiffness
+                ? options.stiffness
+                : spring.stiffiness);
+            console.log(options.gravityPower
+                ? options.gravityPower
+                : spring.gravityPower);
+            console.log(options.gravityDir
+                ? options.gravityDir
+                : new Vector3(
+                    // Unity 座標系からの変換のため X, Z 軸を反転
+                    -spring.gravityDir.x,
+                    spring.gravityDir.y,
+                    -spring.gravityDir.z,
+                ).normalize());
+            console.log(options.dragForce
+                ? options.dragForce
+                : spring.dragForce);
             springs.push(new VRMSpringBone(
                 spring.comment,
-                spring.stiffiness,
-                spring.gravityPower,
-                new Vector3(
+                options.stiffness
+                    ? options.stiffness
+                    : spring.stiffiness,
+                options.gravityPower
+                    ? options.gravityPower
+                    : spring.gravityPower,
+                options.gravityDir
+                    ? options.gravityDir
+                    : new Vector3(
                     // Unity 座標系からの変換のため X, Z 軸を反転
                     -spring.gravityDir.x,
                     spring.gravityDir.y,
                     -spring.gravityDir.z,
                 ).normalize(),
-                spring.dragForce,
+                options.dragForce
+                ? options.dragForce
+                : spring.dragForce,
                 getBone(spring.center),
-                spring.hitRadius,
+                options.hitRadius
+                ? options.hitRadius
+                : spring.hitRadius,
                 rootBones,
                 springColliders,
             ));

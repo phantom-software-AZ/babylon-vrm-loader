@@ -4,6 +4,7 @@ import { Nullable } from '@babylonjs/core/types';
 import { QuaternionHelper } from './quaternion-helper';
 import { SphereCollider } from './sphere-collider';
 import { Vector3Helper } from './vector3-helper';
+import { Matrix } from "@babylonjs/core/Maths/math";
 
 /**
  * Verlet Spring Bone Logic
@@ -96,7 +97,6 @@ export class VRMSpringBoneLogic {
             // 外力による移動量
             nextTail.addInPlace(external);
         }
-
         {
             // 長さを boneLength に強制
             const normalized = nextTail.subtract(absPos).normalize();
@@ -112,7 +112,43 @@ export class VRMSpringBoneLogic {
         this.currentTail = this.getCenterTranslatedPos(center, nextTail);
 
         // 回転を適用
-        this.transform.rotationQuaternion = this.transformToRotation(nextTail);
+        this.setAbsoluteRotationQuaternion(this.transform, this.transformToRotation(nextTail));
+    }
+
+    /**
+     * Set Rotation Quaternion in world space
+     * @param node Node to set rotation
+     * @param quatRotation Quaternion to set
+     * @private
+     */
+    private setAbsoluteRotationQuaternion(node: TransformNode, quatRotation: Quaternion) {
+        if (node.parent) {
+            const positionOrig = new Vector3(0, 0, 0);
+            const scalingOrig = new Vector3(0, 0, 0);
+            const quatRotationNew = Quaternion.Identity();
+            const tempWorldMatrix = Matrix.Identity();
+
+            node.computeWorldMatrix(true);
+            node.getWorldMatrix().decompose(
+                scalingOrig, Quaternion.Identity(), positionOrig);
+            Matrix.ComposeToRef(scalingOrig, quatRotation, positionOrig, tempWorldMatrix);
+
+            const diffMatrix = Matrix.Identity();
+            const invParentMatrix = Matrix.Identity();
+            node.parent.computeWorldMatrix(true);
+            node.parent.getWorldMatrix().invertToRef(invParentMatrix);
+            tempWorldMatrix.multiplyToRef(invParentMatrix, diffMatrix);
+            diffMatrix.decompose(
+                new Vector3(0, 0, 0), quatRotationNew, new Vector3(0, 0, 0));
+
+            if (node.rotationQuaternion) {
+                node.rotationQuaternion.copyFrom(quatRotationNew);
+            } else {
+                quatRotationNew.toEulerAnglesToRef(node.rotation);
+            }
+        } else {
+            node.rotationQuaternion = quatRotation;
+        }
     }
 
     private getCenterTranslatedWorldPos(center: Nullable<TransformNode>, pos: Vector3): Vector3 {
@@ -124,7 +160,7 @@ export class VRMSpringBoneLogic {
 
     private getCenterTranslatedPos(center: Nullable<TransformNode>, pos: Vector3): Vector3 {
         if (center !== null) {
-            return center.position.add(pos);
+            return pos.subtract(center.getAbsolutePosition());
         }
         return pos;
     }

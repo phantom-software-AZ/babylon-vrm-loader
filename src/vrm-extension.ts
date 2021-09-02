@@ -4,6 +4,7 @@ import { Nullable } from '@babylonjs/core/types';
 import { GLTFLoader, IGLTFLoaderExtension, IMaterial, IMeshPrimitive } from '@babylonjs/loaders/glTF/2.0';
 import { VRMManager } from './vrm-manager';
 import { VRMMaterialGenerator } from './vrm-material-generator';
+import {Geometry} from "@babylonjs/core/Meshes/geometry";
 
 /**
  * `extensions` に入る拡張キー
@@ -82,7 +83,7 @@ export class VRM implements IGLTFLoaderExtension {
         context: string,
         primitive: IMeshPrimitive,
         babylonMesh: Mesh,
-    ) {
+    ): Nullable<Promise<Geometry>> {
         if (!primitive.extras || !primitive.extras.targetNames) {
             return null;
         }

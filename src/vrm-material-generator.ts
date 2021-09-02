@@ -214,17 +214,14 @@ export class VRMMaterialGenerator {
         applyPropertyWhenDefined<number>(prop.floatProperties._BlendMode, (value) => {
             switch (value) {
                 case 0: // Opaque
-                    material.alphaBlend = false;
-                    material.alphaTest = false;
+                    material.transparencyMode = Material.MATERIAL_OPAQUE;
                     break;
                 case 1: // TransparentCutout
-                    material.alphaBlend = false;
-                    material.alphaTest = true;
+                    material.transparencyMode = Material.MATERIAL_ALPHATEST;
                     material.alphaMode = Engine.ALPHA_COMBINE;
                     break;
                 case 2: // Transparent
-                    material.alphaBlend = true;
-                    material.alphaTest = false;
+                    material.transparencyMode = Material.MATERIAL_ALPHABLEND;
                     material.alphaMode = Engine.ALPHA_COMBINE;
                     break;
             }
@@ -233,8 +230,6 @@ export class VRMMaterialGenerator {
         applyPropertyWhenDefined<number>(prop.floatProperties._OutlineColorMode, (value) => material.outlineColorMode = value);
         applyPropertyWhenDefined<number>(prop.floatProperties._CullMode, (value) => material.cullMode = value);
         applyPropertyWhenDefined<number>(prop.floatProperties._OutlineCullMode, (value) => material.outlineCullMode = value);
-        applyPropertyWhenDefined<boolean>(prop.keywordMap._ALPHABLEND_ON, (value) => material.alphaBlend = value);
-        applyPropertyWhenDefined<boolean>(prop.keywordMap._ALPHATEST_ON, (value) => material.alphaTest = value);
         applyPropertyWhenDefined<number>(prop.floatProperties._ZWrite, (value) => {
             material.forceDepthWrite = (Math.round(value) === 1);
             if (material.forceDepthWrite) {

@@ -17,7 +17,6 @@ export class VRMSpringBoneLogic {
     /**
      * Reference of parent rotation
      */
-    private readonly parentRotation: Quaternion;
     private readonly boneAxis: Vector3;
     private readonly boneLength: number;
 
@@ -44,7 +43,6 @@ export class VRMSpringBoneLogic {
         if (parent !== null && parent.rotationQuaternion === null) {
             parent.rotationQuaternion = parent.rotation.toQuaternion();
         }
-        this.parentRotation = parent && parent.rotationQuaternion || Quaternion.Identity();
 
         const worldChildPosition = transform.getAbsolutePosition().add(localChildPosition);
         this.currentTail = this.getCenterTranslatedPos(center, worldChildPosition);
@@ -88,7 +86,8 @@ export class VRMSpringBoneLogic {
         }
         {
             // 親の回転による子ボーンの移動目標
-            const rotation = this.parentRotation.multiply(this.localRotation); // parentRotation * localRotation
+            const rotation = this.getAbsoluteRotationQuaternion(this.transform.parent as TransformNode)
+                .multiply(this.localRotation); // parentRotation * localRotation
             const rotatedVec = QuaternionHelper.multiplyWithVector3(rotation, this.boneAxis); // rotation * boneAxis
             const stiffedVec = Vector3Helper.multiplyByFloat(rotatedVec, stiffnessForce); // rotatedVec * stiffnessForce
             nextTail.addInPlace(stiffedVec); // nextTail + stiffedVec
@@ -116,7 +115,7 @@ export class VRMSpringBoneLogic {
     }
 
     /**
-     * Set Rotation Quaternion in world space
+     * Set Rotation Quaternion in world space.
      * @param node Node to set rotation
      * @param quatRotation Quaternion to set
      * @private
@@ -135,7 +134,7 @@ export class VRMSpringBoneLogic {
 
             const diffMatrix = Matrix.Identity();
             const invParentMatrix = Matrix.Identity();
-            node.parent.computeWorldMatrix(true);
+            node.parent.computeWorldMatrix(false);   // Since only used after transformToRotation
             node.parent.getWorldMatrix().invertToRef(invParentMatrix);
             tempWorldMatrix.multiplyToRef(invParentMatrix, diffMatrix);
             diffMatrix.decompose(
@@ -149,6 +148,15 @@ export class VRMSpringBoneLogic {
         } else {
             node.rotationQuaternion = quatRotation;
         }
+    }
+
+    private getAbsoluteRotationQuaternion(node: Nullable<TransformNode>) : Quaternion {
+        const quatRotation = Quaternion.Identity();
+        node?.computeWorldMatrix(true);
+        node?.getWorldMatrix().decompose(
+            new Vector3(0, 0, 0), quatRotation, new Vector3(0, 0, 0)
+        );
+        return quatRotation;
     }
 
     private getCenterTranslatedWorldPos(center: Nullable<TransformNode>, pos: Vector3): Vector3 {
@@ -171,7 +179,8 @@ export class VRMSpringBoneLogic {
      * @see https://stackoverflow.com/questions/51549366/what-is-the-math-behind-fromtorotation-unity3d
      */
     private transformToRotation(nextTail: Vector3): Quaternion {
-        const rotation = this.parentRotation.multiply(this.localRotation);
+        const rotation = this.getAbsoluteRotationQuaternion(this.transform.parent as TransformNode)
+            .multiply(this.localRotation);
         const fromAxis = QuaternionHelper.multiplyWithVector3(rotation, this.boneAxis);
         const toAxis = nextTail.subtract(this.transform.absolutePosition).normalize();
         const result = QuaternionHelper.fromToRotation(fromAxis, toAxis);

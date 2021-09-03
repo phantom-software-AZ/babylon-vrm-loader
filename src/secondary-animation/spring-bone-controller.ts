@@ -120,23 +120,6 @@ export class SpringBoneController {
             const springColliders = (spring.colliderGroups || []).map<ColliderGroup>((g) => {
                 return colliderGroups[g];
             });
-            console.log(options.stiffness
-                ? options.stiffness
-                : spring.stiffiness);
-            console.log(options.gravityPower
-                ? options.gravityPower
-                : spring.gravityPower);
-            console.log(options.gravityDir
-                ? options.gravityDir
-                : new Vector3(
-                    // Unity 座標系からの変換のため X, Z 軸を反転
-                    -spring.gravityDir.x,
-                    spring.gravityDir.y,
-                    -spring.gravityDir.z,
-                ).normalize());
-            console.log(options.dragForce
-                ? options.dragForce
-                : spring.dragForce);
             springs.push(new VRMSpringBone(
                 spring.comment,
                 options.stiffness

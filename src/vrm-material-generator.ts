@@ -125,7 +125,11 @@ export class VRMMaterialGenerator {
             });
         };
 
-        applyTexture(prop.textureProperties._MainTex, (texture) => material.diffuseTexture = texture);
+        applyTexture(prop.textureProperties._MainTex, (texture) => {
+            material.diffuseTexture = texture;
+            if (material.transparencyMode)
+                material.diffuseTexture.hasAlpha = true;
+        });
         applyTexture(prop.textureProperties._ShadeTexture, (texture) => material.shadeTexture = texture);
         applyTexture(prop.textureProperties._BumpMap, (texture) => material.bumpTexture = texture);
         applyTexture(prop.textureProperties._ReceiveShadowTexture, (texture) => material.receiveShadowTexture = texture);

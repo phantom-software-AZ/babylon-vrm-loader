@@ -53,7 +53,7 @@ export class SpringBoneController {
     public constructor(
         public readonly ext: IVRMSecondaryAnimation,
         getBone: getBone,
-        options: ConstructSpringsOptions
+        options?: ConstructSpringsOptions
     ) {
         const colliderGroups = this.constructColliderGroups(getBone);
         this.springs = this.constructSprings(getBone, colliderGroups, options);
@@ -108,7 +108,7 @@ export class SpringBoneController {
     }
 
     private constructSprings(getBone: getBone, colliderGroups: ColliderGroup[],
-                             options: ConstructSpringsOptions) {
+                             options?: ConstructSpringsOptions) {
         if (!this.ext.boneGroups || !this.ext.boneGroups.length) {
             return [];
         }
@@ -122,25 +122,25 @@ export class SpringBoneController {
             });
             springs.push(new VRMSpringBone(
                 spring.comment,
-                options.stiffness
+                options?.stiffness
                     ? options.stiffness
                     : spring.stiffiness,
-                options.gravityPower
+                options?.gravityPower
                     ? options.gravityPower
                     : spring.gravityPower,
-                options.gravityDir
+                options?.gravityDir
                     ? options.gravityDir
                     : new Vector3(
                     // Unity 座標系からの変換のため X, Z 軸を反転
                     -spring.gravityDir.x,
-                    spring.gravityDir.y,
+                    -spring.gravityDir.y,
                     -spring.gravityDir.z,
                 ).normalize(),
-                options.dragForce
+                options?.dragForce
                 ? options.dragForce
                 : spring.dragForce,
                 getBone(spring.center),
-                options.hitRadius
+                options?.hitRadius
                 ? options.hitRadius
                 : spring.hitRadius,
                 rootBones,

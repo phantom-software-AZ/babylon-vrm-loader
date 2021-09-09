@@ -1,4 +1,4 @@
-import {registerPlugin} from "./vrm-file-loader";
+import {registerVrmPlugin} from "./vrm-file-loader";
 import {registerVrmExtension} from "./vrm-extension";
 import {registerVciExtension} from "./vcast-vci-material-unity";
 
@@ -12,8 +12,8 @@ export * from './vrm-interfaces';
 export * from './vrm-manager';
 export * from './vrm-material-generator';
 
-export const loadVrmManager = () => {
-    registerPlugin();
+export const registerVrmManager = () => {
+    registerVrmPlugin();
     registerVrmExtension();
     registerVciExtension();
 };

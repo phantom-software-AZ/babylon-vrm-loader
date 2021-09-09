@@ -1,5 +1,9 @@
 import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { GLTFFileLoader } from '@babylonjs/loaders/glTF/glTFFileLoader';
+import { Nullable } from '@babylonjs/core/types';
+import {VRMManager} from "./vrm-manager";
+import {Scene} from "@babylonjs/core/scene";
+import {ISceneLoaderProgressEvent} from "@babylonjs/core/Loading/sceneLoader";
 
 /**
  * VRM/VCI ファイルを読み込めるようにする
@@ -11,13 +15,25 @@ export class VRMFileLoader extends GLTFFileLoader {
     '.vrm': { isBinary: true },
     '.vci': { isBinary: true },
   };
+  public fileName: string | undefined;
+  public vrmManager: Nullable<VRMManager> = null;
 
   public createPlugin() {
       return new VRMFileLoader();
   }
+
+  public loadAsync(
+      scene: Scene,
+      data: any,
+      rootUrl: string,
+      onProgress?: (event: ISceneLoaderProgressEvent) => void,
+      fileName?: string): Promise<void> {
+    this.fileName = fileName;
+    return super.loadAsync(scene, data, rootUrl, onProgress, fileName);
+  }
 }
 
-export const registerPlugin = () => {
+export const registerVrmPlugin = () => {
     if (SceneLoader) {
         SceneLoader.RegisterPlugin(new VRMFileLoader());
     }

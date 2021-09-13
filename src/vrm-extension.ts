@@ -16,7 +16,7 @@ const NAME = 'VRM';
  * VRM 拡張を処理する
  * [Specification](https://github.com/vrm-c/UniVRM/tree/master/specification/)
  */
-export class VRM implements IGLTFLoaderExtension {
+export class VRMExtension implements IGLTFLoaderExtension {
     /**
      * @inheritdoc
      */
@@ -124,5 +124,5 @@ export class VRM implements IGLTFLoaderExtension {
 
 // ローダーに登録する
 export const registerVrmExtension = () => {
-    GLTFLoader.RegisterExtension(NAME, (loader) => new VRM(loader));
+    GLTFLoader.RegisterExtension(NAME, (loader) => new VRMExtension(loader));
 };

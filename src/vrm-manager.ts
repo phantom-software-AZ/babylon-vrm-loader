@@ -8,7 +8,8 @@ import { HumanoidBone } from './humanoid-bone';
 import { IVRM } from './vrm-interfaces';
 import {
     Node,
-    Scene
+    Scene,
+    TargetCamera
 } from "@babylonjs/core";
 
 interface MorphTargetSetting {
@@ -49,6 +50,18 @@ export class VRMManager {
     private _rootSkeleton: Node;
     private _humanoidBone: HumanoidBone;
     private _rootMesh!: Mesh;
+    private _cameras: TargetCamera[] = [];
+    get cameras(): TargetCamera[] {
+        return this._cameras;
+    }
+
+    public appendCamera(camera: TargetCamera) {
+        this._cameras.push(camera);
+    }
+
+    public resetCameras() {
+        this._cameras = [];
+    }
 
     /**
      * Secondary Animation として定義されている VRM Spring Bone のコントローラ
@@ -61,12 +74,14 @@ export class VRMManager {
      * @param scene
      * @param meshesFrom この番号以降のメッシュがこの VRM に該当する
      * @param transformNodesFrom この番号以降の TransformNode がこの VRM に該当する
+     * @param uri URI this manager belongs to
      */
     public constructor(
         public readonly ext: IVRM,
         public readonly scene: Scene,
         private readonly meshesFrom: number,
         private readonly transformNodesFrom: number,
+        public readonly uri: string,
     ) {
         this.meshCache = this.constructMeshCache();
         this.transformNodeCache = this.constructTransformNodeCache();
@@ -74,7 +89,7 @@ export class VRMManager {
             this.ext.secondaryAnimation,
             this.findTransformNode.bind(this),
             {
-                gravityPower: 0.5,
+                // gravityPower: 0.5,
             }
         );
         this.springBoneController.setup();

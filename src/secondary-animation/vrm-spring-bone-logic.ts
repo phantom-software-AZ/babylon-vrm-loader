@@ -8,6 +8,7 @@ import { Matrix } from "@babylonjs/core/Maths/math";
 
 /**
  * Verlet Spring Bone Logic
+ * TODO: collider is still kind of buggy. Internal meshes sometimes move outside external meshes.
  */
 export class VRMSpringBoneLogic {
     /**

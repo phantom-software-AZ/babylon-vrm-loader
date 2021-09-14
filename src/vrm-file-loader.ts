@@ -15,7 +15,7 @@ export class VRMFileLoader extends GLTFFileLoader {
     '.vrm': { isBinary: true },
     '.vci': { isBinary: true },
   };
-  public fileName: string | undefined;
+  public uri: string;
   public vrmManager: Nullable<VRMManager> = null;
 
   public createPlugin() {
@@ -28,13 +28,9 @@ export class VRMFileLoader extends GLTFFileLoader {
       rootUrl: string,
       onProgress?: (event: ISceneLoaderProgressEvent) => void,
       fileName?: string): Promise<void> {
-    this.fileName = fileName;
+    this.uri = rootUrl;
+    if (fileName)
+        this.uri += fileName;
     return super.loadAsync(scene, data, rootUrl, onProgress, fileName);
   }
 }
-
-export const registerVrmPlugin = () => {
-    if (SceneLoader) {
-        SceneLoader.RegisterPlugin(new VRMFileLoader());
-    }
-};

@@ -8,6 +8,7 @@ import { ColliderGroup } from './collider-group';
 import { SphereCollider } from './sphere-collider';
 import { Vector3Helper } from './vector3-helper';
 import { VRMSpringBoneLogic } from './vrm-spring-bone-logic';
+import {ConstructSpringsOptions} from "./spring-bone-controller";
 
 /**
  * @see https://github.com/vrm-c/UniVRM/blob/master/Assets/VRM/UniVRM/Scripts/SpringBone/VRMSpringBone.cs
@@ -38,12 +39,12 @@ export class VRMSpringBone {
      */
     public constructor(
         public readonly comment: string,
-        public readonly stiffness: number,
-        public readonly gravityPower: number,
-        public readonly gravityDir: Vector3,
-        public readonly dragForce: number,
+        public stiffness: number,
+        public gravityPower: number,
+        public gravityDir: Vector3,
+        public dragForce: number,
         public readonly center: Nullable<TransformNode>,
-        public readonly hitRadius: number,
+        public hitRadius: number,
         public readonly bones: Array<Nullable<TransformNode>>,
         public readonly colliderGroups: ColliderGroup[],
     ) {
@@ -76,16 +77,18 @@ export class VRMSpringBone {
 
     /**
      * Update bones
-     *
      * @param deltaTime
+     * @param boneOptions
      */
-    public async update(deltaTime: number): Promise<void> {
+    public async update(deltaTime: number, boneOptions?: ConstructSpringsOptions): Promise<void> {
         if (this.verlets.length === 0) {
             if (this.activeBones.length === 0) {
                 return;
             }
             this.setup();
         }
+
+        this.updateOptions(boneOptions);
 
         const colliderList: SphereCollider[] = [];
         this.colliderGroups.forEach((group) => {
@@ -186,5 +189,13 @@ export class VRMSpringBone {
         parent.getChildTransformNodes().forEach((child) => {
             this.setupRecursive(center, child);
         });
+    }
+
+    private updateOptions(boneOptions?: ConstructSpringsOptions) {
+        this.stiffness = boneOptions?.stiffness || this.stiffness;
+        this.gravityPower = boneOptions?.gravityPower || this.gravityPower;
+        this.gravityDir = boneOptions?.gravityDir || this.gravityDir;
+        this.dragForce = boneOptions?.dragForce || this.dragForce;
+        this.hitRadius = boneOptions?.hitRadius || this.hitRadius;
     }
 }

@@ -3,7 +3,7 @@ import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { MorphTarget } from '@babylonjs/core/Morph/morphTarget';
 import { Nullable } from '@babylonjs/core/types';
-import {SpringBoneController} from './secondary-animation/spring-bone-controller';
+import {ConstructSpringsOptions, SpringBoneController} from './secondary-animation/spring-bone-controller';
 import { HumanoidBone } from './humanoid-bone';
 import { IVRM } from './vrm-interfaces';
 import {
@@ -89,7 +89,7 @@ export class VRMManager {
             this.ext.secondaryAnimation,
             this.findTransformNode.bind(this),
             {
-                // gravityPower: 0.5,
+                gravityPower: 0.5,
             }
         );
         this.springBoneController.setup();
@@ -161,9 +161,12 @@ export class VRMManager {
      * Secondary Animation を更新する
      *
      * @param deltaTime 前フレームからの経過秒数(sec)
+     * @param boneOptions
      */
-    public async update(deltaTime: number): Promise<void> {
-        await this.springBoneController.update(deltaTime);
+    public async update(
+        deltaTime: number,
+        boneOptions?: ConstructSpringsOptions): Promise<void> {
+        await this.springBoneController.update(deltaTime, boneOptions);
     }
 
     /**
@@ -386,5 +389,18 @@ export class VRMManager {
             }
         }
         return cache;
+    }
+
+    /**
+     * Set whether shadow are received.
+     * @param enabled
+     */
+    public setShadowEnabled(enabled: boolean) {
+        for (const nodeIndex of Object.keys(this.meshCache).map(Number)) {
+            const meshes = this.meshCache[nodeIndex];
+            for (const mesh of meshes) {
+                mesh.receiveShadows = enabled;
+            }
+        }
     }
 }

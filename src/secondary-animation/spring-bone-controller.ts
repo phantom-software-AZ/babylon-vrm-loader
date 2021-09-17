@@ -76,13 +76,14 @@ export class SpringBoneController {
      * Update all SpringBones
      *
      * @param deltaTime Elapsed sec from previous frame
+     * @param boneOptions options for updating bones
      * @see https://docs.unity3d.com/ScriptReference/Time-deltaTime.html
      */
-    public async update(deltaTime: number): Promise<void> {
+    public async update(deltaTime: number, boneOptions?: ConstructSpringsOptions): Promise<void> {
         // ポーズ後のあらぶり防止のため clamp
         deltaTime = Math.max(0.0, Math.min(16.666, deltaTime)) / 1000;
         const promises = this.springs.map<Promise<void>>((spring) => {
-            return spring.update(deltaTime);
+            return spring.update(deltaTime, boneOptions);
         });
         return Promise.all(promises).then(() => { /* Do nothing */ });
     }

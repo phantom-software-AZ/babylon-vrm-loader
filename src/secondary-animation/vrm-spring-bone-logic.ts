@@ -21,6 +21,7 @@ export class VRMSpringBoneLogic {
     private readonly boneAxis: Vector3;
     private readonly boneLength: number;
 
+    private centerAbsolutePos: Vector3;
     private currentTail: Vector3;
     private prevTail: Vector3;
 
@@ -46,7 +47,8 @@ export class VRMSpringBoneLogic {
         }
 
         const worldChildPosition = transform.getAbsolutePosition().add(localChildPosition);
-        this.currentTail = this.getCenterTranslatedPos(center, worldChildPosition);
+        this.centerAbsolutePos = center.getAbsolutePosition();
+        this.currentTail = this.getCenterTranslatedPos(worldChildPosition);
         this.prevTail = this.currentTail;
         this.localRotation = transform.rotationQuaternion.clone();
         this.boneAxis = Vector3.Normalize(localChildPosition);
@@ -74,8 +76,11 @@ export class VRMSpringBoneLogic {
             // Do not update when absolute position is invalid
             return;
         }
-        const currentTail = this.getCenterTranslatedWorldPos(center, this.currentTail);
-        const prevTail = this.getCenterTranslatedWorldPos(center, this.prevTail);
+
+        // Only update Absolute position once! It is expensive.
+        this.centerAbsolutePos = center.getAbsolutePosition();
+        const currentTail = this.getCenterTranslatedWorldPos(this.currentTail);
+        const prevTail = this.getCenterTranslatedWorldPos(this.prevTail);
 
         // verlet 積分で次の位置を計算
         let nextTail = currentTail;
@@ -108,8 +113,8 @@ export class VRMSpringBoneLogic {
             nextTail = this.collide(colliders, nextTail);
         }
 
-        this.prevTail = this.getCenterTranslatedPos(center, currentTail);
-        this.currentTail = this.getCenterTranslatedPos(center, nextTail);
+        this.prevTail = this.getCenterTranslatedPos(currentTail);
+        this.currentTail = this.getCenterTranslatedPos(nextTail);
 
         // 回転を適用
         this.setAbsoluteRotationQuaternion(this.transform, this.transformToRotation(nextTail));
@@ -128,7 +133,6 @@ export class VRMSpringBoneLogic {
             const quatRotationNew = Quaternion.Identity();
             const tempWorldMatrix = Matrix.Identity();
 
-            node.computeWorldMatrix(true);
             node.getWorldMatrix().decompose(
                 scalingOrig, Quaternion.Identity(), positionOrig);
             Matrix.ComposeToRef(scalingOrig, quatRotation, positionOrig, tempWorldMatrix);
@@ -153,23 +157,22 @@ export class VRMSpringBoneLogic {
 
     private getAbsoluteRotationQuaternion(node: Nullable<TransformNode>) : Quaternion {
         const quatRotation = Quaternion.Identity();
-        node?.computeWorldMatrix(true);
         node?.getWorldMatrix().decompose(
             new Vector3(0, 0, 0), quatRotation, new Vector3(0, 0, 0)
         );
         return quatRotation;
     }
 
-    private getCenterTranslatedWorldPos(center: Nullable<TransformNode>, pos: Vector3): Vector3 {
-        if (center !== null) {
-            return center.getAbsolutePosition().add(pos);
+    private getCenterTranslatedWorldPos(pos: Vector3): Vector3 {
+        if (this.centerAbsolutePos) {
+            return this.centerAbsolutePos.add(pos);
         }
         return pos;
     }
 
-    private getCenterTranslatedPos(center: Nullable<TransformNode>, pos: Vector3): Vector3 {
-        if (center !== null) {
-            return pos.subtract(center.getAbsolutePosition());
+    private getCenterTranslatedPos(pos: Vector3): Vector3 {
+        if (this.centerAbsolutePos) {
+            return pos.subtract(this.centerAbsolutePos);
         }
         return pos;
     }

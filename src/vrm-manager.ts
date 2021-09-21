@@ -7,10 +7,15 @@ import {ConstructSpringsOptions, SpringBoneController} from './secondary-animati
 import { HumanoidBone } from './humanoid-bone';
 import { IVRM } from './vrm-interfaces';
 import {
+    Animation,
+    EasingFunction,
+    IAnimationKey,
     Node,
     Scene,
     TargetCamera
 } from "@babylonjs/core";
+import V3DCore from "../../../v3d-core";
+import {getAnimationDataType} from "../../../utilities/types";
 
 interface MorphTargetSetting {
     target: MorphTarget;
@@ -19,6 +24,10 @@ interface MorphTargetSetting {
 
 interface MorphTargetMap {
     [morphName: string]: MorphTargetSetting[];
+}
+
+interface MorphTargetPropertyMap {
+    [morphName: string]: morphingTargetProperty;
 }
 
 interface TransformNodeMap {
@@ -38,10 +47,33 @@ interface MeshCache {
  */
 export type HumanBoneName = 'hips' | 'leftUpperLeg' | 'rightUpperLeg' | 'leftLowerLeg' | 'rightLowerLeg' | 'leftFoot' | 'rightFoot' | 'spine' | 'chest' | 'neck' | 'head' | 'leftShoulder' | 'rightShoulder' | 'leftUpperArm' | 'rightUpperArm' | 'leftLowerArm' | 'rightLowerArm' | 'leftHand' | 'rightHand' | 'leftToes' | 'rightToes' | 'leftEye' | 'rightEye' | 'jaw' | 'leftThumbProximal' | 'leftThumbIntermediate' | 'leftThumbDistal' | 'leftIndexProximal' | 'leftIndexIntermediate' | 'leftIndexDistal' | 'leftMiddleProximal' | 'leftMiddleIntermediate' | 'leftMiddleDistal' | 'leftRingProximal' | 'leftRingIntermediate' | 'leftRingDistal' | 'leftLittleProximal' | 'leftLittleIntermediate' | 'leftLittleDistal' | 'rightThumbProximal' | 'rightThumbIntermediate' | 'rightThumbDistal' | 'rightIndexProximal' | 'rightIndexIntermediate' | 'rightIndexDistal' | 'rightMiddleProximal' | 'rightMiddleIntermediate' | 'rightMiddleDistal' | 'rightRingProximal' | 'rightRingIntermediate' | 'rightRingDistal' | 'rightLittleProximal' | 'rightLittleIntermediate' | 'rightLittleDistal' | 'upperChest' | string;
 
+export class morphingTargetProperty {
+    private _value: number;
+    get value(): number {
+        return this._value;
+    }
+
+    set value(value: number) {
+        this._value = Math.max(0, Math.min(1, value));
+        this.manager.morphing(this.label, value);
+    }
+
+    constructor(
+        public label: string,
+        value: number,
+        private manager: VRMManager
+    ) {
+        this._value = value;
+    }
+}
+
 /**
  * VRM キャラクターを動作させるためのマネージャ
  */
 export class VRMManager {
+
+    public static ROOT_MESH_PREFIX = "vrm_root_";
+
     private morphTargetMap: MorphTargetMap = {};
     private presetMorphTargetMap: MorphTargetMap = {};
     private transformNodeMap: TransformNodeMap = {};
@@ -69,6 +101,11 @@ export class VRMManager {
     public readonly springBoneController: SpringBoneController;
 
     /**
+     * This is necessary because of the way BabylonJS animation works
+     */
+    public MorphTargetPropertyMap: MorphTargetPropertyMap = {};
+
+    /**
      *
      * @param ext glTF.extensions.VRM の中身 json
      * @param scene
@@ -88,9 +125,9 @@ export class VRMManager {
         this.springBoneController = new SpringBoneController(
             this.ext.secondaryAnimation,
             this.findTransformNode.bind(this),
-            {
-                gravityPower: 0.5,
-            }
+            // {
+            //     gravityPower: 0.5,
+            // }
         );
         this.springBoneController.setup();
 
@@ -101,6 +138,12 @@ export class VRMManager {
 
         this.removeDuplicateSkeletons();
         this._rootSkeleton = this.getRootSkeletonNode();
+
+        // Rename __root__ node
+        this.rootMesh.name = VRMManager.ROOT_MESH_PREFIX +
+            this.scene.getNodes().filter(
+                e => e.name.includes(VRMManager.ROOT_MESH_PREFIX)
+            ).length;
     }
 
     /**
@@ -177,6 +220,7 @@ export class VRMManager {
         this._humanoidBone.dispose();
 
         (this.morphTargetMap as any) = null;
+        (this.MorphTargetPropertyMap as any) = null;
         (this.presetMorphTargetMap as any) = null;
         (this.transformNodeMap as any) = null;
         (this.transformNodeCache as any) = null;
@@ -315,6 +359,7 @@ export class VRMManager {
                         target,
                         weight: b.weight,
                     });
+                    this.MorphTargetPropertyMap[g.name] = new morphingTargetProperty(g.name, 0., this);
                     if (g.presetName) {
                         this.presetMorphTargetMap[g.presetName] = this.presetMorphTargetMap[g.presetName] || [];
                         this.presetMorphTargetMap[g.presetName].push({

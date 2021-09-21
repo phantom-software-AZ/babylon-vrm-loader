@@ -47,7 +47,7 @@ export class VRMSpringBoneLogic {
         }
 
         const worldChildPosition = transform.getAbsolutePosition().add(localChildPosition);
-        this.centerAbsolutePos = center.getAbsolutePosition();
+        this.centerAbsolutePos = center ? center.getAbsolutePosition() : new Vector3(0, 0, 0);
         this.currentTail = this.getCenterTranslatedPos(worldChildPosition);
         this.prevTail = this.currentTail;
         this.localRotation = transform.rotationQuaternion.clone();
@@ -78,7 +78,7 @@ export class VRMSpringBoneLogic {
         }
 
         // Only update Absolute position once! It is expensive.
-        this.centerAbsolutePos = center.getAbsolutePosition();
+        this.centerAbsolutePos = center ? center.getAbsolutePosition() : new Vector3(0, 0, 0);
         const currentTail = this.getCenterTranslatedWorldPos(this.currentTail);
         const prevTail = this.getCenterTranslatedWorldPos(this.prevTail);
 

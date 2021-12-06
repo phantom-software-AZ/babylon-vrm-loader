@@ -7,15 +7,10 @@ import {ConstructSpringsOptions, SpringBoneController} from './secondary-animati
 import { HumanoidBone } from './humanoid-bone';
 import { IVRM } from './vrm-interfaces';
 import {
-    Animation,
-    EasingFunction,
-    IAnimationKey,
     Node,
     Scene,
     TargetCamera
 } from "@babylonjs/core";
-import V3DCore from "../../../v3d-core";
-import {getAnimationDataType} from "../../../utilities/types";
 
 interface MorphTargetSetting {
     target: MorphTarget;

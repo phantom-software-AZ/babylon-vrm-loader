@@ -5,7 +5,7 @@ import { Color3 } from '@babylonjs/core/Maths/math';
 import { Mesh } from '@babylonjs/core/Meshes/mesh';
 import { Nullable } from '@babylonjs/core/types';
 import { GLTFLoader, IMaterial } from '@babylonjs/loaders/glTF/2.0';
-import { MToonMaterial } from 'babylon-mtoon-material/src';
+import { MToonMaterial } from '../../../shader/babylon-mtoon-material/src';
 import { IVRMMaterialProperty, IVRMMaterialPropertyShader, IVRMVectorMaterialProperty } from './vrm-interfaces';
 import { Engine } from '@babylonjs/core/Engines/engine';
 

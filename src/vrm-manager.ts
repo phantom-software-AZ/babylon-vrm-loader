@@ -4,7 +4,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { MorphTarget } from '@babylonjs/core/Morph/morphTarget';
 import { Nullable } from '@babylonjs/core/types';
 import {ConstructSpringsOptions, SpringBoneController} from './secondary-animation/spring-bone-controller';
-import { HumanoidBone } from './humanoid-bone';
+import {HumanoidBone, TransformNodeMap} from './humanoid-bone';
 import { IVRM } from './vrm-interfaces';
 import {
     Node,
@@ -23,10 +23,6 @@ interface MorphTargetMap {
 
 interface MorphTargetPropertyMap {
     [morphName: string]: morphingTargetProperty;
-}
-
-interface TransformNodeMap {
-    [humanBoneName: string]: TransformNode;
 }
 
 interface TransformNodeCache {

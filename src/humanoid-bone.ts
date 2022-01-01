@@ -2,7 +2,7 @@ import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
 import { Nullable } from '@babylonjs/core/types';
 import { BoneNotFoundError } from './errors';
 
-interface TransformNodeMap {
+export interface TransformNodeMap {
     [name: string]: TransformNode;
 }
 
@@ -11,7 +11,16 @@ interface TransformNodeMap {
  * @see https://docs.unity3d.com/ja/2018.3/ScriptReference/HumanBodyBones.html
  */
 export class HumanoidBone {
-    public constructor(private nodeMap: TransformNodeMap) {}
+    private readonly _nodeMap: TransformNodeMap;
+    get nodeMap(): TransformNodeMap {
+        return this._nodeMap;
+    }
+
+    public constructor(
+        nodeMap: TransformNodeMap
+    ) {
+        this._nodeMap = nodeMap;
+    }
 
     public dispose() {
         (this.nodeMap as any) = null;

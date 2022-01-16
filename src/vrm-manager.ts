@@ -29,6 +29,13 @@ interface TransformNodeCache {
     [nodeIndex: number]: TransformNode;
 }
 
+export interface TransformNodeTreeNode {
+    id: number;
+    name: string;
+    parent: number;
+    children?: TransformNodeTreeNode[];
+}
+
 interface MeshCache {
     [meshIndex: number]: Mesh[];
 }
@@ -68,6 +75,10 @@ export class VRMManager {
     private morphTargetMap: MorphTargetMap = {};
     private presetMorphTargetMap: MorphTargetMap = {};
     private transformNodeMap: TransformNodeMap = {};
+    private _transformNodeTree: TransformNodeTreeNode;
+    get transformNodeTree(): TransformNodeTreeNode {
+        return this._transformNodeTree;
+    }
     private transformNodeCache: TransformNodeCache = {};
     private meshCache: MeshCache = {};
     private _rootSkeleton: Node;
@@ -314,6 +325,17 @@ export class VRMManager {
     }
 
     /**
+     * Find index of s specific TransformNode from cache
+     * @param node
+     */
+    public indexOfTransformNode(node: Nullable<Node>): number {
+        for (const [k, v] of Object.entries(this.transformNodeCache)) {
+            if (node == v) return parseInt(k, 10);
+        }
+        return -1;
+    }
+
+    /**
      * mesh 番号からメッシュを探す
      * gltf の mesh 番号は `metadata.gltf.pointers` に記録されている
      */
@@ -368,13 +390,37 @@ export class VRMManager {
      * 事前に TransformNode と bone 名を紐づける
      */
     private constructTransformNodeMap() {
+        const treePreArr: TransformNodeTreeNode[] = [];
         this.ext.humanoid.humanBones.forEach((b) => {
             const node = this.findTransformNode(b.node);
             if (!node) {
                 return;
             }
             this.transformNodeMap[b.bone] = node;
+            treePreArr.push({id: b.node, name: b.bone, parent: this.indexOfTransformNode(node.parent)});
         });
+        const tree = this.hierarchy(treePreArr);
+        if (tree.length === 0) throw Error("Failed to construct bone hierarchy tree!");
+        this._transformNodeTree = tree[0];
+    }
+
+    private hierarchy(data: TransformNodeTreeNode[]) {
+        const tree: TransformNodeTreeNode[] = [];
+        const childOf: any = {};
+        data.forEach((item) => {
+            const id = item.id;
+            const parent = item.parent;
+            childOf[id] = childOf[id] || [];
+            item.children = childOf[id];
+            // Assume Hips is root
+            if (parent != null && this.transformNodeCache[parent].parent != this._rootMesh
+            && item.name.toLowerCase() !== 'hips') {
+                (childOf[parent] = childOf[parent] || []).push(item)
+            } else {
+                tree.push(item);
+            }
+        });
+        return tree;
     }
 
     /**
@@ -390,7 +436,7 @@ export class VRMManager {
             }
             for (const pointer of node.metadata.gltf.pointers) {
                 if (pointer.startsWith('/nodes/')) {
-                    const nodeIndex = parseInt((pointer as string).substr(7), 10);
+                    const nodeIndex = parseInt((pointer as string).substring(7), 10);
                     cache[nodeIndex] = node;
                     break;
                 }

@@ -143,217 +143,217 @@ export class HumanoidBone {
     /**
      * 左つま先(Optional)
      */
-    public get leftToes() {
+    public get leftToes(): Nullable<TransformNode> {
         return this.getOptionalBone('leftToes');
     }
     /**
      * 右つま先(Optional)
      */
-    public get rightToes() {
+    public get rightToes(): Nullable<TransformNode> {
         return this.getOptionalBone('rightToes');
     }
     /**
      * 左目(Optional)
      */
-    public get leftEye() {
+    public get leftEye(): Nullable<TransformNode> {
         return this.getOptionalBone('leftEye');
     }
     /**
      * 右目(Optional)
      */
-    public get rightEye() {
+    public get rightEye(): Nullable<TransformNode> {
         return this.getOptionalBone('rightEye');
     }
     /**
      * 顎(Optional)
      */
-    public get jaw() {
+    public get jaw(): Nullable<TransformNode> {
         return this.getOptionalBone('jaw');
     }
     /**
      * 左親指第一指骨(Optional)
      */
-    public get leftThumbProximal() {
+    public get leftThumbProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftThumbProximal');
     }
     /**
      * 左親指第二指骨(Optional)
      */
-    public get leftThumbIntermediate() {
+    public get leftThumbIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('leftThumbIntermediate');
     }
     /**
      * 左親指第三指骨(Optional)
      */
-    public get leftThumbDistal() {
+    public get leftThumbDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftThumbDistal');
     }
     /**
      * 左人差し指第一指骨(Optional)
      */
-    public get leftIndexProximal() {
+    public get leftIndexProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftIndexProximal');
     }
     /**
      * 左人差し指第二指骨(Optional)
      */
-    public get leftIndexIntermediate() {
+    public get leftIndexIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('leftIndexIntermediate');
     }
     /**
      * 左人差し指第三指骨(Optional)
      */
-    public get leftIndexDistal() {
+    public get leftIndexDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftIndexDistal');
     }
     /**
      * 左中指第一指骨(Optional)
      */
-    public get leftMiddleProximal() {
+    public get leftMiddleProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftMiddleProximal');
     }
     /**
      * 左中指第二指骨(Optional)
      */
-    public get leftMiddleIntermediate() {
+    public get leftMiddleIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('leftMiddleIntermediate');
     }
     /**
      * 左中指第三指骨(Optional)
      */
-    public get leftMiddleDistal() {
+    public get leftMiddleDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftMiddleDistal');
     }
     /**
      * 左薬指第一指骨(Optional)
      */
-    public get leftRingProximal() {
+    public get leftRingProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftRingProximal');
     }
     /**
      * 左薬指第二指骨(Optional)
      */
-    public get leftRingIntermediate() {
+    public get leftRingIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('leftRingIntermediate');
     }
     /**
      * 左薬指第三指骨(Optional)
      */
-    public get leftRingDistal() {
+    public get leftRingDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftRingDistal');
     }
     /**
      * 左小指第一指骨(Optional)
      */
-    public get leftLittleProximal() {
+    public get leftLittleProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftLittleProximal');
     }
     /**
      * 左小指第二指骨(Optional)
      */
-    public get leftLittleIntermediate() {
+    public get leftLittleIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('leftLittleIntermediate');
     }
     /**
      * 左小指第三指骨(Optional)
      */
-    public get leftLittleDistal() {
+    public get leftLittleDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('leftLittleDistal');
     }
     /**
      * 右親指第一指骨(Optional)
      */
-    public get rightThumbProximal() {
+    public get rightThumbProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightThumbProximal');
     }
     /**
      * 右親指第二指骨(Optional)
      */
-    public get rightThumbIntermediate() {
+    public get rightThumbIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('rightThumbIntermediate');
     }
     /**
      * 右親指第三指骨(Optional)
      */
-    public get rightThumbDistal() {
+    public get rightThumbDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightThumbDistal');
     }
     /**
      * 右人差し指第一指骨(Optional)
      */
-    public get rightIndexProximal() {
+    public get rightIndexProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightIndexProximal');
     }
     /**
      * 右人差し指第二指骨(Optional)
      */
-    public get rightIndexIntermediate() {
+    public get rightIndexIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('rightIndexIntermediate');
     }
     /**
      * 右人差し指第三指骨(Optional)
      */
-    public get rightIndexDistal() {
+    public get rightIndexDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightIndexDistal');
     }
     /**
      * 右中指第一指骨(Optional)
      */
-    public get rightMiddleProximal() {
+    public get rightMiddleProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightMiddleProximal');
     }
     /**
      * 右中指第二指骨(Optional)
      */
-    public get rightMiddleIntermediate() {
+    public get rightMiddleIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('rightMiddleIntermediate');
     }
     /**
      * 右中指第三指骨(Optional)
      */
-    public get rightMiddleDistal() {
+    public get rightMiddleDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightMiddleDistal');
     }
     /**
      * 右薬指第一指骨(Optional)
      */
-    public get rightRingProximal() {
+    public get rightRingProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightRingProximal');
     }
     /**
      * 右薬指第二指骨(Optional)
      */
-    public get rightRingIntermediate() {
+    public get rightRingIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('rightRingIntermediate');
     }
     /**
      * 右薬指第三指骨(Optional)
      */
-    public get rightRingDistal() {
+    public get rightRingDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightRingDistal');
     }
     /**
      * 右小指第一指骨(Optional)
      */
-    public get rightLittleProximal() {
+    public get rightLittleProximal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightLittleProximal');
     }
     /**
      * 右小指第二指骨(Optional)
      */
-    public get rightLittleIntermediate() {
+    public get rightLittleIntermediate(): Nullable<TransformNode> {
         return this.getOptionalBone('rightLittleIntermediate');
     }
     /**
      * 右小指第三指骨(Optional)
      */
-    public get rightLittleDistal() {
+    public get rightLittleDistal(): Nullable<TransformNode> {
         return this.getOptionalBone('rightLittleDistal');
     }
     /**
      * 上胸(Optional)
      */
-    public get upperChest() {
+    public get upperChest(): Nullable<TransformNode> {
         return this.getOptionalBone('upperChest');
     }
 

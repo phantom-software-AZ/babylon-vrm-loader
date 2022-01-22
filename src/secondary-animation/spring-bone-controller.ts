@@ -81,7 +81,7 @@ export class SpringBoneController {
      */
     public async update(deltaTime: number, boneOptions?: ConstructSpringsOptions): Promise<void> {
         // ポーズ後のあらぶり防止のため clamp
-        deltaTime = Math.max(0.0, Math.min(16.666, deltaTime)) / 1000;
+        deltaTime = Math.max(0.0, Math.min(125, deltaTime)) / 1000;
         const promises = this.springs.map<Promise<void>>((spring) => {
             return spring.update(deltaTime, boneOptions);
         });
@@ -134,7 +134,7 @@ export class SpringBoneController {
                     : new Vector3(
                     // Unity 座標系からの変換のため X, Z 軸を反転
                     -spring.gravityDir.x,
-                    -spring.gravityDir.y,
+                    spring.gravityDir.y,
                     -spring.gravityDir.z,
                 ).normalize(),
                 options?.dragForce

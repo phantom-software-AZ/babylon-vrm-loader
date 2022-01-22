@@ -1,29 +1,30 @@
-import { Quaternion, Vector3 } from '@babylonjs/core/Maths/math';
-import { TransformNode } from '@babylonjs/core/Meshes/transformNode';
-import { Nullable } from '@babylonjs/core/types';
-import { QuaternionHelper } from './quaternion-helper';
-import { SphereCollider } from './sphere-collider';
-import { Vector3Helper } from './vector3-helper';
-import { Matrix } from "@babylonjs/core/Maths/math";
+import {Quaternion, Vector3} from '@babylonjs/core/Maths/math';
+import {TransformNode} from '@babylonjs/core/Meshes/transformNode';
+import {Nullable} from '@babylonjs/core/types';
+import {QuaternionHelper} from './quaternion-helper';
+import {SphereCollider} from './sphere-collider';
 
 /**
- * Verlet Spring Bone Logic
- * TODO: collider is still kind of buggy. Internal meshes sometimes move outside external meshes.
+ * Verlet Spring Bone Logic.
  */
 export class VRMSpringBoneLogic {
     /**
      * Cloned initial local rotation
      */
-    private readonly localRotation: Quaternion;
+    private localPosition: Vector3;
+    private localRotation: Quaternion;
     /**
      * Reference of parent rotation
      */
-    private readonly boneAxis: Vector3;
-    private readonly boneLength: number;
+    private boneAxis: Vector3;
+    private boneLength: number;
 
     private centerAbsolutePos: Vector3;
+    private centerSpacePosition: Vector3;
+    private parentAbsolutePos: Vector3;
     private currentTail: Vector3;
     private prevTail: Vector3;
+    private worldParentQuaternion: Quaternion;
 
     /**
      * @param center Center reference of TransformNode
@@ -32,10 +33,10 @@ export class VRMSpringBoneLogic {
      * @param localChildPosition
      */
     public constructor(
-        center: Nullable<TransformNode>,
+        private readonly center: Nullable<TransformNode>,
         public readonly radius: number,
         public readonly transform: TransformNode,
-        localChildPosition: Vector3,
+        private readonly localChildPosition: Vector3,
     ) {
         // Initialize rotationQuaternion when not initialized
         if (!transform.rotationQuaternion) {
@@ -46,13 +47,22 @@ export class VRMSpringBoneLogic {
             parent.rotationQuaternion = parent.rotation.toQuaternion();
         }
 
-        const worldChildPosition = transform.getAbsolutePosition().add(localChildPosition);
-        this.centerAbsolutePos = center ? center.getAbsolutePosition() : new Vector3(0, 0, 0);
-        this.currentTail = this.getCenterTranslatedPos(worldChildPosition);
-        this.prevTail = this.currentTail;
-        this.localRotation = transform.rotationQuaternion.clone();
-        this.boneAxis = Vector3.Normalize(localChildPosition);
-        this.boneLength = localChildPosition.length();
+        this.init();
+    }
+
+    private init() {
+        this.centerAbsolutePos = this.center ? this.center.absolutePosition : new Vector3(0, 0, 0);
+        this.centerSpacePosition = this.transform.absolutePosition.subtract(this.centerAbsolutePos);
+        this.parentAbsolutePos = this.transform.parent ?
+            (this.transform.parent as TransformNode).absolutePosition : new Vector3(0, 0, 0);
+        this.worldParentQuaternion = Quaternion.Identity();
+
+        this.localPosition = this.mirrorY(this.transform.position.clone());
+        this.localRotation = this.transform.rotationQuaternion!.clone();
+        this.currentTail = this.localToWorld(this.localChildPosition).subtract(this.centerAbsolutePos);
+        this.prevTail = this.currentTail.clone();
+        this.boneAxis = Vector3.Normalize(this.localChildPosition);
+        this.boneLength = this.localChildPosition.length();
     }
 
     /**
@@ -71,124 +81,83 @@ export class VRMSpringBoneLogic {
         external: Vector3,
         colliders: SphereCollider[],
     ): void {
-        const absPos = this.transform.getAbsolutePosition();
+        const absPos = this.transform.absolutePosition;
         if (Number.isNaN(absPos.x)) {
             // Do not update when absolute position is invalid
             return;
         }
 
-        // Only update Absolute position once! It is expensive.
-        this.centerAbsolutePos = center ? center.getAbsolutePosition() : new Vector3(0, 0, 0);
-        const currentTail = this.getCenterTranslatedWorldPos(this.currentTail);
-        const prevTail = this.getCenterTranslatedWorldPos(this.prevTail);
+        if (center) {
+            this.centerAbsolutePos = center.absolutePosition;
+        }
+        this.centerSpacePosition = absPos.subtract(this.centerAbsolutePos);
+        this.parentAbsolutePos = this.transform.parent ?
+            (this.transform.parent as TransformNode).absolutePosition : new Vector3(0, 0, 0);
+
+        this.worldParentQuaternion = this.transform.parent ? Quaternion.FromRotationMatrix(
+                        this.transform.parent.getWorldMatrix().getRotationMatrix()) : Quaternion.Identity();
+
+        const currentTail = this.currentTail;
+        const prevTail = this.prevTail;
+        // if (this.transform.name === "9aeaa5b9-60a0-40da-ae19-e979c7395685") {
 
         // verlet 積分で次の位置を計算
-        let nextTail = currentTail;
-        {
-            // 減衰付きで前のフレームの移動を継続
-            const attenuation = 1.0 - dragForce;
-            const delta = Vector3Helper.multiplyByFloat(currentTail.subtract(prevTail), attenuation);
-            nextTail.addInPlace(delta);
-        }
-        {
-            // 親の回転による子ボーンの移動目標
-            const rotation = this.getAbsoluteRotationQuaternion(this.transform.parent as TransformNode)
-                .multiply(this.localRotation); // parentRotation * localRotation
-            const rotatedVec = QuaternionHelper.multiplyWithVector3(rotation, this.boneAxis); // rotation * boneAxis
-            const stiffedVec = Vector3Helper.multiplyByFloat(rotatedVec, stiffnessForce); // rotatedVec * stiffnessForce
-            nextTail.addInPlace(stiffedVec); // nextTail + stiffedVec
-        }
-        {
-            // 外力による移動量
-            nextTail.addInPlace(external);
-        }
-        {
-            // 長さを boneLength に強制
-            const normalized = nextTail.subtract(absPos).normalize();
-            nextTail = absPos.add(Vector3Helper.multiplyByFloat(normalized, this.boneLength));
-        }
+        let nextTail = this.currentTail.clone();
 
-        {
-            // Collision で移動
-            nextTail = this.collide(colliders, nextTail);
-        }
+        // Momentum/Drag
+        const delta = currentTail.subtract(prevTail).scaleInPlace(1.0 - dragForce);
+        nextTail.addInPlace(delta);
 
-        this.prevTail = this.getCenterTranslatedPos(currentTail);
-        this.currentTail = this.getCenterTranslatedPos(nextTail);
+        // 親の回転による子ボーンの移動目標
+        const rotation1 = this.localRotation.clone();
+        const rotation2 = this.worldParentQuaternion.clone();
+        const rotatedVec = Vector3.Zero();
+        this.boneAxis.rotateByQuaternionToRef(rotation1, rotatedVec); // rotation * boneAxis
+        rotatedVec.addInPlace(this.localPosition);
+        rotatedVec.rotateByQuaternionToRef(rotation2, rotatedVec); // rotation * boneAxis
+        rotatedVec.addInPlace(this.parentAbsolutePos).subtractInPlace(absPos).normalize();
+        const stiffedVec = rotatedVec.scale(stiffnessForce); // rotatedVec * stiffnessForce
+        nextTail.addInPlace(stiffedVec); // nextTail + stiffedVec
+
+        // 外力による移動量
+        nextTail.addInPlace(external);
+
+        // 長さを boneLength に強制
+        const diff = nextTail.subtract(this.centerSpacePosition);
+        diff.normalize();
+        diff.scaleInPlace(this.boneLength)
+        nextTail = this.centerSpacePosition.add(diff);
+
+        // Collision で移動
+        nextTail = this.collide(colliders, nextTail);
+
+        this.prevTail = currentTail;
+        this.currentTail = nextTail;
 
         // 回転を適用
-        this.setAbsoluteRotationQuaternion(this.transform, this.transformToRotation(nextTail));
+        const r = this.transformToRotationLocal(nextTail);
+        this.transform.rotationQuaternion = this.localRotation.multiply(r);
     }
 
-    /**
-     * Set Rotation Quaternion in world space.
-     * @param node Node to set rotation
-     * @param quatRotation Quaternion to set
-     * @private
-     */
-    private setAbsoluteRotationQuaternion(node: TransformNode, quatRotation: Quaternion) {
-        if (node.parent) {
-            const positionOrig = new Vector3(0, 0, 0);
-            const scalingOrig = new Vector3(0, 0, 0);
-            const quatRotationNew = Quaternion.Identity();
-            const tempWorldMatrix = Matrix.Identity();
-
-            node.getWorldMatrix().decompose(
-                scalingOrig, Quaternion.Identity(), positionOrig);
-            Matrix.ComposeToRef(scalingOrig, quatRotation, positionOrig, tempWorldMatrix);
-
-            const diffMatrix = Matrix.Identity();
-            const invParentMatrix = Matrix.Identity();
-            node.parent.computeWorldMatrix(false);   // Since only used after transformToRotation
-            node.parent.getWorldMatrix().invertToRef(invParentMatrix);
-            tempWorldMatrix.multiplyToRef(invParentMatrix, diffMatrix);
-            diffMatrix.decompose(
-                new Vector3(0, 0, 0), quatRotationNew, new Vector3(0, 0, 0));
-
-            if (node.rotationQuaternion) {
-                node.rotationQuaternion.copyFrom(quatRotationNew);
-            } else {
-                quatRotationNew.toEulerAnglesToRef(node.rotation);
-            }
-        } else {
-            node.rotationQuaternion = quatRotation;
-        }
+    private localToWorld(pos: Vector3): Vector3 {
+        const rotatedPos = pos.clone();
+        pos.rotateByQuaternionToRef(
+            this.worldParentQuaternion.multiply(this.transform.rotationQuaternion!), rotatedPos);
+        rotatedPos.addInPlace(this.transform.absolutePosition);
+        return rotatedPos;
     }
 
-    private getAbsoluteRotationQuaternion(node: Nullable<TransformNode>) : Quaternion {
-        const quatRotation = Quaternion.Identity();
-        node?.getWorldMatrix().decompose(
-            new Vector3(0, 0, 0), quatRotation, new Vector3(0, 0, 0)
-        );
-        return quatRotation;
-    }
+    private transformToRotationLocal(nextTail: Vector3): Quaternion {
+        const initialCenterSpaceQuaternionR1 = Quaternion.Inverse(this.localRotation);
+        const initialCenterSpaceQuaternionR2 = Quaternion.Inverse(this.worldParentQuaternion);
+        const fromAxis = this.boneAxis.clone();
+        const toAxis = Vector3.Zero();
+        nextTail.add(this.centerAbsolutePos).subtract(this.parentAbsolutePos)
+            .rotateByQuaternionToRef(initialCenterSpaceQuaternionR2, toAxis);
+        toAxis.subtract(this.localPosition).rotateByQuaternionToRef(initialCenterSpaceQuaternionR1, toAxis);
 
-    private getCenterTranslatedWorldPos(pos: Vector3): Vector3 {
-        if (this.centerAbsolutePos) {
-            return this.centerAbsolutePos.add(pos);
-        }
-        return pos;
-    }
-
-    private getCenterTranslatedPos(pos: Vector3): Vector3 {
-        if (this.centerAbsolutePos) {
-            return pos.subtract(this.centerAbsolutePos);
-        }
-        return pos;
-    }
-
-    /**
-     * 次のテールの位置情報から回転情報を生成する
-     *
-     * @see https://stackoverflow.com/questions/51549366/what-is-the-math-behind-fromtorotation-unity3d
-     */
-    private transformToRotation(nextTail: Vector3): Quaternion {
-        const rotation = this.getAbsoluteRotationQuaternion(this.transform.parent as TransformNode)
-            .multiply(this.localRotation);
-        const fromAxis = QuaternionHelper.multiplyWithVector3(rotation, this.boneAxis);
-        const toAxis = nextTail.subtract(this.transform.absolutePosition).normalize();
-        const result = QuaternionHelper.fromToRotation(fromAxis, toAxis);
-        return result.multiplyInPlace(rotation);
+        toAxis.normalize();
+        return QuaternionHelper.fromToRotation(fromAxis, toAxis);
     }
 
     /**
@@ -198,17 +167,28 @@ export class VRMSpringBoneLogic {
      */
     private collide(colliders: SphereCollider[], nextTail: Vector3): Vector3 {
         colliders.forEach((collider) => {
+            // Collider position passed in are actually AbsPos
+            const colliderCenterSpacePosition = collider.position.subtract(this.centerAbsolutePos);
+            // Manual parenting
+            colliderCenterSpacePosition.addInPlace(this.centerSpacePosition);
             const r = this.radius + collider.radius;
-            const axis = nextTail.subtract(collider.position);
-            // 少数誤差許容のため 2 cm 判定を小さくする
+            const axis = nextTail.subtract(colliderCenterSpacePosition);
+                // 少数誤差許容のため 2 cm 判定を小さくする
             if (axis.lengthSquared() <= (r * r) - 0.02) {
                 // ヒット。 Collider の半径方向に押し出す
-                const posFromCollider = collider.position.add(Vector3Helper.multiplyByFloat(axis.normalize(), r));
+                const posFromCollider = colliderCenterSpacePosition.add(axis.normalize().scaleInPlace(r));
                 // 長さを boneLength に強制
-                const absPos = this.transform.absolutePosition;
-                nextTail = absPos.add(Vector3Helper.multiplyByFloat(posFromCollider.subtractInPlace(absPos).normalize(), this.boneLength));
+                nextTail = posFromCollider
+                    .subtractInPlace(this.centerSpacePosition)
+                    .normalize()
+                    .scaleInPlace(this.boneLength)
+                    .addInPlace(this.centerSpacePosition);
             }
         });
         return nextTail;
+    }
+
+    private mirrorY(v: Vector3) {
+        return new Vector3(v.x, -v.y, v.z);
     }
 }

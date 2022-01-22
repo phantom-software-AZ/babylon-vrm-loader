@@ -127,9 +127,6 @@ export class VRMManager {
         this.springBoneController = new SpringBoneController(
             this.ext.secondaryAnimation,
             this.findTransformNode.bind(this),
-            // {
-            //     gravityPower: 0.5,
-            // }
         );
         this.springBoneController.setup();
 

@@ -53,6 +53,7 @@ export class VRMSpringBone {
             bone.rotationQuaternion = bone.rotationQuaternion || bone.rotation.toQuaternion();
             this.initialLocalRotations.push(bone.rotationQuaternion.clone());
         });
+        this.gravityDir.normalize();
     }
 
     /**
@@ -73,6 +74,13 @@ export class VRMSpringBone {
 
             this.setupRecursive(this.center, bone);
         });
+
+        // Deduplicate
+        this.verlets = this.verlets.filter((v, i, arr) => {
+            return i === arr.findIndex((t) => {
+                return t.transform.name === v.transform.name
+            });
+        });
     }
 
     /**
@@ -88,7 +96,7 @@ export class VRMSpringBone {
             this.setup();
         }
 
-        this.updateOptions(boneOptions);
+        const oldOptions = this.updateOptions(boneOptions);
 
         const colliderList: SphereCollider[] = [];
         this.colliderGroups.forEach((group) => {
@@ -126,10 +134,9 @@ export class VRMSpringBone {
         });
 
         const stiffness = this.stiffness * deltaTime;
-        const external = Vector3Helper.multiplyByFloat(this.gravityDir, this.gravityPower * deltaTime);
+        const external = this.gravityDir.scale(this.gravityPower * deltaTime);
 
-        const promises = this.verlets.map<Promise<void>>((verlet, index) => {
-            return new Promise<void>((resolve) => {
+        this.verlets.map((verlet, index) => {
                 verlet.update(
                     this.center,
                     stiffness,
@@ -141,11 +148,10 @@ export class VRMSpringBone {
                     this.boneGizmoList[index].position = verlet.transform.absolutePosition;
                     this.boneGizmoList[index].rotationQuaternion = verlet.transform.rotationQuaternion;
                 }
-                resolve();
-            });
         });
 
-        return Promise.all(promises).then(() => { /* Do Nothing */ });
+        // Restore options
+        this.updateOptions(oldOptions);
     }
 
     private setupRecursive(center: Nullable<TransformNode>, parent: TransformNode): void {
@@ -192,10 +198,19 @@ export class VRMSpringBone {
     }
 
     private updateOptions(boneOptions?: ConstructSpringsOptions) {
+        const backupOptions: ConstructSpringsOptions = {
+            stiffness: this.stiffness,
+            gravityPower: this.gravityPower,
+            gravityDir: this.gravityDir.clone(),
+            dragForce: this.dragForce,
+            hitRadius: this.hitRadius,
+        };
         this.stiffness = boneOptions?.stiffness || this.stiffness;
         this.gravityPower = boneOptions?.gravityPower || this.gravityPower;
         this.gravityDir = boneOptions?.gravityDir || this.gravityDir;
         this.dragForce = boneOptions?.dragForce || this.dragForce;
         this.hitRadius = boneOptions?.hitRadius || this.hitRadius;
+
+        return backupOptions;
     }
 }

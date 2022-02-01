@@ -1,4 +1,3 @@
-import { SceneLoader } from '@babylonjs/core/Loading/sceneLoader';
 import { GLTFFileLoader } from '@babylonjs/loaders/glTF/glTFFileLoader';
 import { Nullable } from '@babylonjs/core/types';
 import {VRMManager} from "./vrm-manager";

@@ -23,7 +23,7 @@ export class HumanoidBone {
     }
 
     public dispose() {
-        (this.nodeMap as any) = null;
+        (this._nodeMap as any) = null;
     }
 
     /**

@@ -217,6 +217,7 @@ export class VRMManager {
     public dispose(): void {
         this.springBoneController.dispose();
         this._humanoidBone.dispose();
+        this._rootSkeleton.dispose();
 
         (this.morphTargetMap as any) = null;
         (this.MorphTargetPropertyMap as any) = null;
@@ -224,6 +225,8 @@ export class VRMManager {
         (this.transformNodeMap as any) = null;
         (this.transformNodeCache as any) = null;
         (this.meshCache as any) = null;
+        (this._cameras as any) = null;
+        (this._transformNodeTree as any) = null;
         (this._rootMesh as any) = null;
     }
 
